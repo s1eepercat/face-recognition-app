@@ -6,13 +6,8 @@ import FaceRecognition from './components/FaceRecognition/FaceRecognition.js';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm.js';
 import Rank from './components/Rank/Rank.js';
 import Particles from 'react-particles-js';
-import Clarifai from 'clarifai';
 import Signin from './components/Signin/Signin.js';
 import Register from './components/Register/Register.js';
-
-const app = new Clarifai.App({
-  apiKey: '1311b8f1eae5417080d3b609d05fef9f'
-});
 
 const particlesOptions = {
   particles: {
@@ -33,24 +28,28 @@ const particlesOptions = {
   }
 }
 
+
+
+const initialState = {
+  input: '',
+  imageUrl: '',
+  box: [],
+  route: 'signin',
+  isSignedIn: false,
+  user: {
+    id: '',
+    name: '',
+    email: '',
+    entries: 0,
+    joined: ''
+  }
+}
+
 class App extends Component {
 
   constructor() {
     super();
-    this.state = {
-      input: '',
-      imageUrl: '',
-      box: [],
-      route: 'signin',
-      isSignedIn: false,
-      user: {
-        id: '',
-        name: '',
-        email: '',
-        entries: 0,
-        joined: ''
-      }
-    }
+    this.state = initialState;
   }
 
   // componentDidMount() {
@@ -105,10 +104,14 @@ class App extends Component {
   onSubmit = () => {
     this.setState({ imageUrl: this.state.input });
 
-    app.models
-      .predict(
-        Clarifai.FACE_DETECT_MODEL,
-        this.state.input)
+    fetch('http://localhost:3000/imageurl', {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: this.state.input
+      })
+    })
+      .then(response => response.json())
       .then(response => {
         if (response) {
           fetch('http://localhost:3000/image', {
@@ -122,6 +125,7 @@ class App extends Component {
             .then(count => {
               this.setState(Object.assign(this.state.user, { entries: count }))
             })
+            .catch(console.log);
         }
         this.displayFaceBox(this.calculateFaceLocation(response));
       })
@@ -131,7 +135,7 @@ class App extends Component {
 
   onRouteChange = (route) => {
     if (route === 'signin') {
-      this.setState({ isSignedIn: false })
+      this.setState({ initialState })
     } else if (route === 'home') {
       this.setState({ isSignedIn: true })
     }
